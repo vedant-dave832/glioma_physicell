@@ -1,0 +1,221 @@
+# Single source of truth for the model.
+#
+# Nothing downstream hard-codes a number. build_config.py emits the PhysiCell
+# XML from this file, and table1.py emits the reviewer-requested parameter table
+# from this same file, so the manuscript table and the simulation cannot drift
+# apart.
+#
+# Every leaf parameter carries:
+#   value, units, field (exact PhysiCell XML path), meaning,
+#   provenance (measured|calculated|assumed|default), source (id in sources.yaml)
+
+meta:
+  physicell_version: "1.14.2"
+  base_project: "template"
+  framing: >-
+    Simplified 2-D agent-based glioma simulation on an IDH1-mutant baseline.
+    All modelled agents carry the IDH1 R132H mutation; the comparison is
+    TP53-wild-type versus TP53-mutant on that shared background, per reviewer
+    major issue #1. ATRX and CDKN2A/B status are held constant across all agents
+    and are not represented. The simulation assumes, and does not demonstrate,
+    CNS WHO grade 4.
+
+domain:
+  x_min: {value: -500, units: micron, field: "domain/x_min", meaning: "domain lower x bound", provenance: assumed, source: null}
+  x_max: {value: 500,  units: micron, field: "domain/x_max", meaning: "domain upper x bound", provenance: assumed, source: null}
+  y_min: {value: -500, units: micron, field: "domain/y_min", meaning: "domain lower y bound", provenance: assumed, source: null}
+  y_max: {value: 500,  units: micron, field: "domain/y_max", meaning: "domain upper y bound", provenance: assumed, source: null}
+  dx:    {value: 20,   units: micron, field: "domain/dx", meaning: "voxel edge length; 50x50 mesh = 2500 voxels", provenance: default, source: physicell_default}
+  use_2D: {value: true, units: dimensionless, field: "domain/use_2D", meaning: "restrict to z=0 plane", provenance: assumed, source: null}
+
+time:
+  max_time:      {value: 7920, units: min, field: "overall/max_time", meaning: "total simulated time (5.5 days)", provenance: assumed, source: null}
+  save_interval: {value: 360,  units: min, field: "save/full_data/interval", meaning: "output cadence; n_timepoints is COMPUTED, never asserted", provenance: assumed, source: null}
+  dt_diffusion:  {value: 0.01, units: min, field: "overall/dt_diffusion", meaning: "diffusion solver timestep", provenance: default, source: physicell_default}
+  dt_mechanics:  {value: 0.1,  units: min, field: "overall/dt_mechanics", meaning: "mechanics timestep", provenance: default, source: physicell_default}
+  dt_phenotype:  {value: 6,    units: min, field: "overall/dt_phenotype", meaning: "phenotype update timestep", provenance: default, source: physicell_default}
+
+substrate:
+  name: oxygen
+  diffusion:  {value: 100000.0, units: "micron^2/min", field: "microenvironment_setup/variable[oxygen]/physical_parameter_set/diffusion_coefficient", meaning: "oxygen diffusion coefficient", provenance: default, source: physicell_default}
+  decay:      {value: 0.1,      units: "1/min",        field: "microenvironment_setup/variable[oxygen]/physical_parameter_set/decay_rate", meaning: "oxygen decay rate", provenance: default, source: physicell_default}
+  initial:    {value: 38,       units: mmHg,           field: "microenvironment_setup/variable[oxygen]/initial_condition", meaning: "initial oxygen everywhere", provenance: default, source: physicell_default}
+  dirichlet:  {value: 38,       units: mmHg,           field: "microenvironment_setup/variable[oxygen]/Dirichlet_boundary_condition", meaning: "fixed oxygen at all domain boundaries", provenance: default, source: physicell_default}
+  uptake:     {value: 10,       units: "1/min",        field: "cell_definition/phenotype/secretion/substrate[oxygen]/uptake_rate", meaning: "per-cell oxygen uptake", provenance: default, source: physicell_default}
+  note: >-
+    With these settings oxygen stays near-saturating over the simulated
+    densities. That is a modelling choice, and it means oxygen is NOT a limiting
+    resource and cannot mediate competition. Reviewer major issue #5. The
+    analysis reports the minimum oxygen actually reached so this can be stated
+    as an observation rather than an assumption.
+
+# ------------------------------------------------------------------------------
+# Genotypes. All carry IDH1 R132H.
+#
+# Cycle: PhysiCell Live model (code 5), one phase, exponentially distributed
+# duration. Cycle transition RATE is what the XML stores, and it is DERIVED from
+# a published population doubling time by convert.py -- it is never typed in by
+# hand. See convert.doubling_time_to_cycle_rate for the algebra and why
+# T_double = ln(2) / (r - d), not ln(2) / r and not 1 / r.
+# ------------------------------------------------------------------------------
+genotypes:
+
+  IDHmut_TP53wt:
+    display_name: "IDH1 R132H / TP53 wild-type"
+    colour: "#2a78d6"
+    doubling_time:
+      value: 4.9
+      units: days
+      field: "DERIVED -> cell_definition/phenotype/cycle[code=5]/phase_transition_rates/rate[0->0]"
+      meaning: "population doubling time; converted to a Live-cycle transition rate"
+      provenance: measured
+      source: verheul2021
+      uncertainty: {low: 1.8, high: 16.4, kind: observed_range}
+    apoptosis_rate:
+      value: 5.31667e-05
+      units: "1/min"
+      field: "cell_definition/phenotype/death/model[code=100]/death_rate"
+      meaning: "basal apoptosis hazard"
+      provenance: default
+      source: physicell_default
+
+  IDHmut_TP53mut:
+    display_name: "IDH1 R132H / TP53-mutant"
+    colour: "#eb6834"
+    # No doubling_time input. This arm's CYCLE TRANSITION RATE is matched to the
+    # TP53-wild-type arm, and its population doubling time is therefore an
+    # OUTPUT of the model, not an input to it.
+    #
+    # This is the reviewer's major issue #2 stated precisely: "You gave
+    # TP53-mutant cells the same cell-cycle setting as wild-type cells but
+    # reduced their apoptosis rate tenfold. The model is therefore expected to
+    # produce more TP53-mutant cells." That is true, and the honest response is
+    # to compute the expected advantage analytically BEFORE running anything, so
+    # the simulation is never presented as having discovered it.
+    cycle:
+      match_to: IDHmut_TP53wt
+      meaning: >-
+        Live-cycle transition rate held identical to the TP53-wild-type arm. No
+        study was found measuring a cycle-rate difference attributable to TP53
+        status on an IDH1-mutant background, so the arms are matched on
+        proliferation by construction and differ only in apoptosis.
+      provenance: assumed
+      source: verheul2021
+    apoptosis_rate:
+      derived_from: IDHmut_TP53wt
+      operation: divide
+      factor:
+        value: 10.0
+        units: dimensionless
+        field: "cell_definition/phenotype/death/model[code=100]/death_rate"
+        meaning: "fold reduction in basal apoptosis hazard attributed to TP53 mutation"
+        provenance: assumed
+        source: tp53_apoptosis_UNSOURCED
+        sweep: [1.0, 2.0, 5.0, 10.0, 20.0, 100.0]
+        sweep_note: >-
+          1.0 is the null (no effect). The headline result must be reported as a
+          function of this factor, not at 10.0 alone. This is the sensitivity
+          analysis the reviewer asked for in place of an unsupported
+          mechanism claim.
+
+  IDHwt_reference:
+    display_name: "IDH-wildtype reference (not a subclone)"
+    colour: "#1baf7a"
+    include_in_primary: false
+    note: >-
+      Reference arm only, for checking that the doubling-time conversion
+      reproduces a known contrast. It is NOT presented as a subclone of
+      astrocytoma IDH-mutant, per reviewer major issue #1.
+    doubling_time:
+      value: 2.6
+      units: days
+      field: "DERIVED -> cycle transition rate"
+      meaning: "population doubling time of IDH-wildtype comparator cultures"
+      provenance: measured
+      source: verheul2021
+      uncertainty: {low: 1.6, high: 3.6, kind: observed_range}
+    apoptosis_rate:
+      value: 5.31667e-05
+      units: "1/min"
+      field: "cell_definition/phenotype/death/model[code=100]/death_rate"
+      meaning: "basal apoptosis hazard"
+      provenance: default
+      source: physicell_default
+
+# ------------------------------------------------------------------------------
+# Shared phenotype settings. Reviewer major issue #5 asks that motility and
+# mechanics be reported, and that they be identical across genotypes unless a
+# genotype-specific value is justified. They are identical here, which is why
+# spatial differences cannot be a genotype phenotype.
+# ------------------------------------------------------------------------------
+shared_phenotype:
+  motility_enabled: {value: false, units: dimensionless, field: "phenotype/motility/options/enabled", meaning: "no active migration in any genotype", provenance: assumed, source: null}
+  cell_cell_adhesion:  {value: 0.4,  units: "micron/min", field: "phenotype/mechanics/cell_cell_adhesion_strength", meaning: "adhesion, identical across genotypes", provenance: default, source: physicell_default}
+  cell_cell_repulsion: {value: 10.0, units: "micron/min", field: "phenotype/mechanics/cell_cell_repulsion_strength", meaning: "repulsion, identical across genotypes", provenance: default, source: physicell_default}
+  necrosis_rate: {value: 0.0, units: "1/min", field: "phenotype/death/model[code=101]/death_rate", meaning: "necrosis is oxygen-driven at runtime, base rate left at default", provenance: default, source: physicell_default}
+
+# ------------------------------------------------------------------------------
+# Experimental arms. The control arms exist because reviewer major issue #5
+# says a change in relative abundance between two populations seeded in separate
+# disks cannot demonstrate competition.
+# ------------------------------------------------------------------------------
+seeding:
+  n_cells_per_population: 100
+  disk_radius: {value: 50, units: micron, meaning: "radius of each seeded disk"}
+
+arms:
+  mono_TP53wt:
+    kind: monoculture
+    populations: [{genotype: IDHmut_TP53wt, centre: [0, 0]}]
+    purpose: "Baseline growth of one genotype alone. Denominator for competition coefficients, and the arm checked against the analytic expectation."
+
+  mono_TP53mut:
+    kind: monoculture
+    populations: [{genotype: IDHmut_TP53mut, centre: [0, 0]}]
+    purpose: "As above for the TP53-mutant arm."
+
+  co_separated:
+    kind: coculture
+    layout: separated
+    populations:
+      - {genotype: IDHmut_TP53wt,  centre: [-200, 0]}
+      - {genotype: IDHmut_TP53mut, centre: [200, 0]}
+    purpose: "The manuscript's original spatial layout, retained for comparability."
+
+  co_mixed:
+    kind: coculture
+    layout: mixed
+    populations:
+      - {genotype: IDHmut_TP53wt,  centre: [0, 0]}
+      - {genotype: IDHmut_TP53mut, centre: [0, 0]}
+    purpose: "Well-mixed co-culture. Populations actually interpenetrate here, so this is the only arm in which a competition claim is even testable."
+
+  co_swapped:
+    kind: coculture
+    layout: separated
+    populations:
+      - {genotype: IDHmut_TP53mut, centre: [-200, 0]}
+      - {genotype: IDHmut_TP53wt,  centre: [200, 0]}
+    purpose: "Position-swapped control. If an outcome depends on which side a population starts on, the outcome is about geometry, not genotype."
+
+  label_control:
+    kind: coculture
+    layout: separated
+    identical_parameters: true
+    populations:
+      - {genotype: IDHmut_TP53wt, centre: [-200, 0], label_as: "label_A"}
+      - {genotype: IDHmut_TP53wt, centre: [200, 0],  label_as: "label_B"}
+    purpose: >-
+      Null control: two populations with identical parameters and different
+      labels. Any apparent difference between label_A and label_B is the
+      false-positive floor of the whole analysis. If a genotype effect is not
+      clearly larger than what shows up here, it is noise.
+
+run:
+  n_replicates: 10
+  seed_base: 20260907
+  omp_num_threads: 2
+  seed_note: >-
+    PhysiCell seeds one RNG stream per OpenMP thread from the base seed, so a
+    run is only reproducible at a FIXED thread count. omp_num_threads is
+    recorded in every run manifest and must not be changed mid-experiment.

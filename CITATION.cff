@@ -1,0 +1,71 @@
+cff-version: 1.2.0
+title: >-
+  glioma_physicell: a replicate-run and analysis harness for agent-based
+  astrocytoma simulation
+message: If you use this software, please cite it and the works it depends on.
+type: software
+authors:
+  - given-names: Vedant
+    family-names: Dave
+license: BSD-3-Clause
+repository-code: "https://github.com/USERNAME/glioma_physicell"
+abstract: >-
+  A harness for running seeded PhysiCell replicates of a two-dimensional
+  agent-based astrocytoma model and reducing them to replicate-level outcomes.
+  Parameters are held in a single registry that emits both the PhysiCell
+  configuration and the manuscript parameter table, with per-parameter
+  provenance (measured, calculated, assumed, or software default) enforced at
+  load time. Includes monoculture, well-mixed, position-swapped and
+  identical-parameter label-control arms; within-seed paired contrasts with
+  bootstrap confidence intervals; a replicate-count convergence check; and a
+  closed-form expectation check against N(t) = N0 exp((r - d) t).
+keywords:
+  - agent-based model
+  - PhysiCell
+  - glioma
+  - astrocytoma
+  - IDH1
+  - TP53
+  - reproducibility
+
+references:
+  - type: article
+    title: >-
+      PhysiCell: An open source physics-based cell simulator for 3-D
+      multicellular systems
+    authors:
+      - family-names: Ghaffarizadeh
+        given-names: Ahmadreza
+      - family-names: Heiland
+        given-names: Randy
+      - family-names: Friedman
+        given-names: Samuel H.
+      - family-names: Mumenthaler
+        given-names: Shannon M.
+      - family-names: Macklin
+        given-names: Paul
+    journal: PLoS Computational Biology
+    year: 2018
+    volume: 14
+    issue: 2
+    doi: 10.1371/journal.pcbi.1005991
+
+  - type: article
+    title: >-
+      Generation, characterization, and drug sensitivities of 12
+      patient-derived IDH1-mutant glioma cell cultures
+    authors:
+      - family-names: Verheul
+        given-names: Cassandra
+      - family-names: Ntafoulis
+        given-names: Ioannis
+      - family-names: Kers
+        given-names: Trisha V.
+    journal: Neuro-Oncology Advances
+    year: 2021
+    volume: 3
+    issue: 1
+    doi: 10.1093/noajnl/vdab103
+    notes: >-
+      Source of the population doubling times the cycle transition rates are
+      derived from.

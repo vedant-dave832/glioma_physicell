@@ -1,0 +1,89 @@
+# Citation registry.
+#
+# Every parameter in model.yaml names a source id from this file. A parameter
+# whose provenance is "measured" MUST point at a study that measured that
+# quantity -- not a review that discusses the topic. This is reviewer major
+# issue #2: "The parameter values also need a source that actually supports
+# them, and reference 11 does not."
+#
+# provenance vocabulary used in model.yaml:
+#   measured   - a published study reports this quantity for a comparable system
+#   calculated - derived from a measured quantity by a documented conversion
+#   assumed    - chosen by us; NOT established by any cited study; must be swept
+#   default    - PhysiCell built-in value, retained deliberately
+
+sources:
+
+  verheul2021:
+    type: primary
+    citation: >-
+      Verheul C, Ntafoulis I, Kers TV, Hoogstrate Y, Mastroberardino PG,
+      Barnhoorn S, et al. Generation, characterization, and drug sensitivities
+      of 12 patient-derived IDH1-mutant glioma cell cultures.
+      Neuro-Oncology Advances. 2021;3(1):vdab103.
+    doi: 10.1093/noajnl/vdab103
+    supports:
+      - "IDH1-mutant patient-derived glioma cultures: mean population doubling
+         time 4.9 days (range 1.8-16.4 days), n = 12 cultures."
+      - "IDH-wildtype comparator cultures: mean population doubling time
+         2.6 days (range 1.6-3.6 days)."
+    caveats:
+      - "In vitro monolayer/spheroid doubling times. They are population
+         doubling times, so they already net out cell loss; the conversion in
+         convert.py accounts for this when solving for the PhysiCell cycle rate."
+      - "Wide range (1.8-16.4 d) means the mean is a weak point estimate. The
+         range is carried into the sensitivity sweep rather than discarded."
+
+  physicell2018:
+    type: primary
+    citation: >-
+      Ghaffarizadeh A, Heiland R, Friedman SH, Mumenthaler SM, Macklin P.
+      PhysiCell: An open source physics-based cell simulator for 3-D
+      multicellular systems. PLoS Computational Biology. 2018;14(2):e1005991.
+    doi: 10.1371/journal.pcbi.1005991
+    supports:
+      - "Agent-based framework, Live cycle model semantics, oxygen-dependent
+         necrosis, default biophysical parameter set."
+
+  physicell_default:
+    type: software_default
+    citation: >-
+      PhysiCell 1.14.2 default cell definition, as distributed in
+      sample_projects/template/config/PhysiCell_settings.xml.
+    supports:
+      - "apoptosis death_rate 5.31667e-05 1/min"
+      - "oxygen diffusion 100000 micron^2/min, decay 0.1 1/min"
+      - "volume, mechanics, and necrosis fluid/biomass change rates"
+    caveats:
+      - "These are software defaults, not measurements for astrocytoma. They are
+         reported as 'default' in Table 1 and must not be described as
+         literature-derived."
+
+  # ---------------------------------------------------------------------------
+  # DELIBERATELY EMPTY SLOT.
+  #
+  # The reviewer asked for a study that measured the apoptosis-rate difference
+  # between a named TP53 substitution and TP53-wild-type in glioma, in units the
+  # model can use (events per cell per minute).
+  #
+  # A literature search did not find one. Published work on R273H and related
+  # substitutions reports apoptotic fractions under specific stressors, in
+  # specific engineered backgrounds, at single timepoints -- none of which
+  # converts to a basal per-minute hazard for an untreated astrocytoma cell.
+  #
+  # So the harness does NOT hard-code a fold-reduction. The apoptosis
+  # suppression factor is declared `assumed` and is a swept axis. Per the
+  # reviewer: "If you cannot, present the work as a hypothetical sensitivity
+  # analysis and drop the variant-specific mechanism claim."
+  #
+  # If you later find a study that does measure this, add it here with
+  # provenance `measured` and set the sweep to a point value.
+  # ---------------------------------------------------------------------------
+  tp53_apoptosis_UNSOURCED:
+    type: none
+    citation: "No source. Value is an assumption swept over a range."
+    supports: []
+    caveats:
+      - "Any claim that TP53 mutation reduces the apoptosis rate by a specific
+         factor is NOT supported. Report results as conditional on the swept
+         factor."

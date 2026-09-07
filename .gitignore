@@ -1,0 +1,21 @@
+# PhysiCell itself is a dependency, not part of this repository. It is pinned by
+# version and commit in every run manifest and installed by scripts/setup_macos.sh.
+PhysiCell/
+
+# --- Simulation output -------------------------------------------------------
+# The raw frames are large and fully regenerable: every run's manifest.json
+# records the seed, the PhysiCell version and commit, the thread count, and a
+# SHA-256 of the exact config used. Those manifests and configs ARE tracked, and
+# they are what makes a result checkable without shipping gigabytes of .mat files.
+runs/**/output/
+runs/**/physicell.log
+
+# --- Python ------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+
+# --- macOS -------------------------------------------------------------------
+.DS_Store
