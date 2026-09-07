@@ -1,0 +1,10 @@
+{
+  "Major 1 \u2014 tumour-type framing": "params/model.yaml: all genotypes carry IDH1 R132H; comparison is TP53-wt vs TP53-mut on that background. ATRX/CDKN2A/B held constant and declared. IDH-wildtype arm marked include_in_primary: false and labelled a reference, not a subclone. Grade 4 declared as assumed.",
+  "Major 2 \u2014 parameter table and provenance": "report.table1() emits the unit / PhysiCell field / meaning / source / provenance table from the same registry the XML is built from. registry._validate() refuses to load if a 'measured' parameter points at a non-primary source, or an unsourced assumption is not swept.",
+  "Major 2b \u2014 doubling-time conversion": "convert.doubling_time_to_cycle_rate: r = ln(2)/T + d, with the ln(2) error quantified by convert.naive_phase_duration_error.",
+  "Major 3 \u2014 counts must reconcile": "convert.n_saved_timepoints computes the timepoint count (23, not 33) and raises if max_time is not a whole multiple of the save interval. outcomes.observed_doubling_time_days is fitted from the data and kept in a separate column from the entered parameters.",
+  "Major 4 \u2014 replication and statistics": "run.plan generates seeded replicates; outcomes.per_replicate reduces each run to one row; stats works only on replicate-level rows; stats.convergence justifies n; stats.determinism_report tests the determinism claim; incomplete runs are excluded and reported by collect.read_all rather than trimmed.",
+  "Major 5 \u2014 competition and spatial claims": "Monoculture, well-mixed, position-swapped and label-control arms in params/model.yaml; outcomes.competition_coefficients measures growth against monoculture; motility and mechanics reported in Table 1 and identical across genotypes; minimum oxygen reached is recorded so the non-limiting claim is an observation.",
+  "Major 8 \u2014 missing figures": "plots.py emits every figure with a companion CSV.",
+  "Recommended 2 \u2014 sensitivity analysis": "The apoptosis suppression factor is a swept axis (sweep: [1, 2, 5, 10, 20, 100]); plots.sensitivity renders the result as a function of the assumption."
+}

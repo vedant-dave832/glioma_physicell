@@ -16,11 +16,13 @@ import argparse
 import json
 import os
 import sys
+import time
 from pathlib import Path
 
 import pandas as pd
 
-from . import collect, outcomes, plots, registry, report, run as runner, stats
+from . import (collect, manuscript_figures, outcomes, plots, registry, report,
+               run as runner, stats)
 
 REPO = Path(__file__).resolve().parents[2]
 DEFAULT_PARAMS = REPO / "params"
@@ -129,9 +131,14 @@ def cmd_run(args) -> None:
               flush=True)
 
     results = runner.run_all(specs, model, physicell, force=args.force,
-                             on_progress=progress)
+                             on_progress=progress, max_seconds=args.max_seconds)
     bad = [r for r in results if r.get("status") in ("failed", "incomplete")]
-    print(f"\ndone: {len(results) - len(bad)} ok/skipped, {len(bad)} needing a rerun")
+    stopped = [r for r in results if r.get("status") == "budget_reached"]
+    print(f"\ndone: {len(results) - len(bad) - len(stopped)} ok/skipped, "
+          f"{len(bad)} needing a rerun")
+    if stopped:
+        print(f"  stopped on time budget with {stopped[0]['remaining']} runs left; "
+              f"rerun the same command to continue")
     for r in bad:
         print(f"  ! {r['arm']}/seed_{r['seed']}: {r['status']}")
 
@@ -143,17 +150,41 @@ def cmd_sweep(args) -> None:
         "apoptosis_rate"]["factor"]["sweep"]
     physicell = _physicell_root(args)
     print(f"sweeping apoptosis factor over {factors}")
+
+    # The time budget spans the WHOLE sweep, not each factor. Handing the same
+    # max_seconds to every factor in turn would let a "400 second" chunk run for
+    # 400 x len(factors) seconds, which is how a chunked run gets killed
+    # mid-simulation by an outer timeout.
+    started = time.time()
+    stopped_early = False
     for f in factors:
+        remaining = (
+            None if args.max_seconds is None
+            else args.max_seconds - (time.time() - started)
+        )
+        if remaining is not None and remaining <= 0:
+            stopped_early = True
+            print(f"\nstopped on time budget before factor {f}")
+            break
         model = _load(args, factor=float(f))
         root = Path(args.runs) / f"sweep_factor_{f}"
         specs = runner.plan(model, root, physicell, arms=args.arms,
                             n_replicates=args.replicates, apoptosis_factor=float(f))
         print(f"\nfactor {f}: {len(specs)} runs")
-        runner.run_all(
+        results = runner.run_all(
             specs, model, physicell, force=args.force,
             on_progress=lambda i, n, s, r: print(
                 f"  [{i}/{n}] {s.arm}/seed_{s.seed} {r.get('status')}", flush=True),
+            max_seconds=remaining,
         )
+        if any(r.get("status") == "budget_reached" for r in results):
+            stopped_early = True
+            break
+    if stopped_early:
+        print("\nSweep incomplete. Rerun the same command to continue "
+              "(completed runs are skipped).")
+    else:
+        print("\nSweep complete.")
 
 
 # --------------------------------------------------------------- analyze -----
@@ -252,7 +283,7 @@ def cmd_analyze(args) -> None:
     sweep_rows = []
     for d in sorted(Path(args.runs).glob("sweep_factor_*")):
         try:
-            st = collect.read_all(d)
+            st = collect.read_all(d, exclude=())
         except ValueError:
             continue
         sr = outcomes.per_replicate(st)
@@ -275,6 +306,17 @@ def cmd_analyze(args) -> None:
             else {"physicell_version": model.meta["physicell_version"],
                   "physicell_commit": "unknown"})
     report.write_all(model, out, prov, int(reps["seed"].nunique()))
+
+    # --- the eight manuscript figures ------------------------------------
+    try:
+        made = manuscript_figures.build_all(
+            traj, reps, arm_reps, contrasts_df, floor, model,
+            Path(args.runs), out / "manuscript_figures",
+            arm=getattr(args, "arm", "co_separated"))
+        summary["manuscript_figures"] = [p.name for p in made]
+    except Exception as exc:  # noqa: BLE001
+        summary["manuscript_figures_error"] = str(exc)
+        print(f"  manuscript figures FAILED: {exc}")
 
     (out / "summary.json").write_text(json.dumps(summary, indent=2, default=str))
     print(f"\nWrote analysis to {out}")
@@ -311,6 +353,9 @@ def build_parser() -> argparse.ArgumentParser:
     r.add_argument("--replicates", type=int, default=None)
     r.add_argument("--apoptosis-factor", type=float, default=None)
     r.add_argument("--force", action="store_true", help="rerun completed runs")
+    r.add_argument("--max-seconds", type=float, default=None,
+                   help="wall-clock budget; stops between runs so a long set can "
+                        "be worked through in chunks. Rerun to continue.")
     r.set_defaults(func=cmd_run)
 
     s = sub.add_parser("sweep", help="run the apoptosis-factor sensitivity sweep")
@@ -318,10 +363,14 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--arms", nargs="*", default=["mono_TP53wt", "mono_TP53mut"])
     s.add_argument("--replicates", type=int, default=None)
     s.add_argument("--force", action="store_true")
+    s.add_argument("--max-seconds", type=float, default=None,
+                   help="wall-clock budget per sweep factor; stops between runs.")
     s.set_defaults(func=cmd_sweep)
 
     a = sub.add_parser("analyze", help="outcomes, statistics, figures, report")
     a.add_argument("--out", default=str(DEFAULT_RESULTS))
+    a.add_argument("--arm", default="co_separated",
+                   help="arm used for the manuscript figures (default co_separated)")
     a.set_defaults(func=cmd_analyze)
     return p
 

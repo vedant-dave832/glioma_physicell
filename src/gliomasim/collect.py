@@ -121,11 +121,20 @@ def read_run(run_dir: Path) -> pd.DataFrame:
     return df.sort_values(["frame", "population"]).reset_index(drop=True)
 
 
-def read_all(run_root: Path) -> pd.DataFrame:
-    """Read every completed run under run_root."""
+def read_all(run_root: Path, exclude: tuple[str, ...] = ("sweep_factor_",)) -> pd.DataFrame:
+    """Read every completed run under run_root.
+
+    ``exclude`` drops runs whose path contains any of these fragments. It
+    defaults to the sweep directories: those runs use a deliberately different
+    apoptosis factor, so pooling them into the main replicate set would mix
+    conditions and inflate the apparent variance. The sweep is read separately,
+    with ``exclude=()``.
+    """
     frames = []
     problems = []
     for manifest_path in sorted(run_root.rglob("manifest.json")):
+        if any(frag in str(manifest_path) for frag in exclude):
+            continue
         manifest = json.loads(manifest_path.read_text())
         if manifest.get("status") not in ("ok",):
             problems.append(

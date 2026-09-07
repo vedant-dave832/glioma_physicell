@@ -193,12 +193,8 @@ def competition_coefficients(reps: pd.DataFrame) -> pd.DataFrame:
     genotype's growth rate alone, at the same seed. If this coefficient is zero,
     there is no competition, and the manuscript must drop the word.
     """
-    mono_map = {
-        pop: arm
-        for arm, pop in reps[reps.arm.str.startswith("mono_")][
-            ["arm", "population"]
-        ].drop_duplicates().to_numpy()[:, ::-1]
-    }
+    mono = reps[reps.arm.str.startswith("mono_")][["arm", "population"]].drop_duplicates()
+    mono_map = dict(zip(mono["population"], mono["arm"]))
     rows = []
     co = reps[~reps.arm.str.startswith("mono_")]
     for _, r in co.iterrows():

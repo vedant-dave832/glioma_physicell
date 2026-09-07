@@ -1,0 +1,223 @@
+{
+  "n_runs": 60,
+  "arms": [
+    "co_mixed",
+    "co_separated",
+    "co_swapped",
+    "label_control",
+    "mono_TP53mut",
+    "mono_TP53wt"
+  ],
+  "n_timepoints_expected": 23,
+  "n_timepoints_observed": [
+    23
+  ],
+  "primary_outcome": "log_growth_rate_per_min",
+  "expectation_check_passes": true,
+  "false_positive_floor": {
+    "arm": "label_control",
+    "comparison": "label_A - label_B",
+    "outcome": "log_growth_rate_per_min",
+    "n_pairs": 10,
+    "mean_difference": 2.5004755661859645e-06,
+    "ci_low": -7.54447039331596e-06,
+    "ci_high": 1.227733706368281e-05,
+    "cohens_dz": 0.1487563876112813,
+    "p_paired_t": 0.6492538945688434,
+    "p_wilcoxon_signed_rank": 0.76953125,
+    "interpretation": "Difference between two populations with identical parameters. Any genotype contrast of comparable magnitude is indistinguishable from noise."
+  },
+  "mixed_effects": {
+    "co_mixed": {
+      "available": true,
+      "formula": "log_growth_rate_per_min ~ C(population) + (1|seed)",
+      "n_obs": 20,
+      "n_groups": 10,
+      "params": {
+        "Intercept": 0.00014968141176302275,
+        "C(population)[T.IDHmut_TP53wt]": -5.265718151535027e-05,
+        "Group Var": 1.4082212272951953e-09
+      },
+      "pvalues": {
+        "Intercept": 0.0,
+        "C(population)[T.IDHmut_TP53wt]": 3.122334493999741e-29,
+        "Group Var": 0.9999999973120536
+      },
+      "conf_int": {
+        "Intercept": [
+          0.0001431792485323313,
+          0.0001561835749937142
+        ],
+        "C(population)[T.IDHmut_TP53wt]": [
+          -6.185262893448318e-05,
+          -4.346173409621737e-05
+        ],
+        "Group Var": [
+          -0.8192914657664502,
+          0.8192914685828926
+        ]
+      }
+    },
+    "co_separated": {
+      "available": true,
+      "formula": "log_growth_rate_per_min ~ C(population) + (1|seed)",
+      "n_obs": 20,
+      "n_groups": 10,
+      "params": {
+        "Intercept": 0.00014170400224051911,
+        "C(population)[T.IDHmut_TP53wt]": -4.600758668026587e-05,
+        "Group Var": 0.017417196075743456
+      },
+      "pvalues": {
+        "Intercept": 1.4069747432094238e-206,
+        "C(population)[T.IDHmut_TP53wt]": 1.2263582990909282e-12,
+        "Group Var": 0.9597312205904915
+      },
+      "conf_int": {
+        "Intercept": [
+          0.00013264857758552557,
+          0.00015075942689551266
+        ],
+        "C(population)[T.IDHmut_TP53wt]": [
+          -5.8703802094651985e-05,
+          -3.331137126587976e-05
+        ],
+        "Group Var": [
+          -0.658686690413352,
+          0.6935210825648389
+        ]
+      }
+    },
+    "co_swapped": {
+      "available": true,
+      "formula": "log_growth_rate_per_min ~ C(population) + (1|seed)",
+      "n_obs": 20,
+      "n_groups": 10,
+      "params": {
+        "Intercept": 0.00014921007627830468,
+        "C(population)[T.IDHmut_TP53wt]": -4.5658033361515375e-05,
+        "Group Var": 0.22787832853943268
+      },
+      "pvalues": {
+        "Intercept": 2.3148170171024978e-265,
+        "C(population)[T.IDHmut_TP53wt]": 7.176766882243243e-17,
+        "Group Var": 0.6386408717274675
+      },
+      "conf_int": {
+        "Intercept": [
+          0.00014080678788475157,
+          0.00015761336467185778
+        ],
+        "C(population)[T.IDHmut_TP53wt]": [
+          -5.6382769081687065e-05,
+          -3.4933297641343686e-05
+        ],
+        "Group Var": [
+          -0.7232148984831183,
+          1.1789715555619837
+        ]
+      }
+    },
+    "label_control": {
+      "available": true,
+      "formula": "log_growth_rate_per_min ~ C(population) + (1|seed)",
+      "n_obs": 20,
+      "n_groups": 10,
+      "params": {
+        "Intercept": 0.00010106092605712497,
+        "C(population)[T.label_B]": -2.5004755661859505e-06,
+        "Group Var": 0.7347418307796573
+      },
+      "pvalues": {
+        "Intercept": 1.2405564689034697e-92,
+        "C(population)[T.label_B]": 0.6380574868120109,
+        "Group Var": 0.37209436784132377
+      },
+      "conf_int": {
+        "Intercept": [
+          9.135827084430482e-05,
+          0.00011076358126994512
+        ],
+        "C(population)[T.label_B]": [
+          -1.2918567156194417e-05,
+          7.917616023822516e-06
+        ],
+        "Group Var": [
+          -0.8786758703606937,
+          2.3481595319200084
+        ]
+      }
+    },
+    "mono_TP53mut": {
+      "available": false,
+      "reason": "not enough populations or seeds"
+    },
+    "mono_TP53wt": {
+      "available": false,
+      "reason": "not enough populations or seeds"
+    }
+  },
+  "max_cv_across_seeds": 0.18854636366730876,
+  "convergence_arm": "mono_TP53mut/IDHmut_TP53mut",
+  "final_relative_half_width": 0.04659865269843913,
+  "competition": {
+    "co_mixed/IDHmut_TP53mut": {
+      "label": "",
+      "n": 10,
+      "mean": 7.647126079967406e-06,
+      "ci_low": -1.5199665253094475e-06,
+      "ci_high": 1.5932292575092594e-05,
+      "method": "percentile bootstrap, 10000 resamples"
+    },
+    "co_mixed/IDHmut_TP53wt": {
+      "label": "",
+      "n": 10,
+      "mean": 5.132287754113441e-06,
+      "ci_low": -4.3156474631490165e-06,
+      "ci_high": 1.581504886340966e-05,
+      "method": "percentile bootstrap, 10000 resamples"
+    },
+    "co_separated/IDHmut_TP53mut": {
+      "label": "",
+      "n": 10,
+      "mean": -3.3028344253621157e-07,
+      "ci_low": -9.34591426266909e-06,
+      "ci_high": 9.204191188572644e-06,
+      "method": "percentile bootstrap, 10000 resamples"
+    },
+    "co_separated/IDHmut_TP53wt": {
+      "label": "",
+      "n": 10,
+      "mean": 3.804473066694218e-06,
+      "ci_low": -9.014021357431395e-06,
+      "ci_high": 1.6217544211040382e-05,
+      "method": "percentile bootstrap, 10000 resamples"
+    },
+    "co_swapped/IDHmut_TP53mut": {
+      "label": "",
+      "n": 10,
+      "mean": 7.175790595249362e-06,
+      "ci_low": -4.6682302804667314e-06,
+      "ci_high": 1.833817854422722e-05,
+      "method": "percentile bootstrap, 10000 resamples"
+    },
+    "co_swapped/IDHmut_TP53wt": {
+      "label": "",
+      "n": 10,
+      "mean": 1.1660100423230309e-05,
+      "ci_low": -4.136928361474178e-06,
+      "ci_high": 2.752574266968666e-05,
+      "method": "percentile bootstrap, 10000 resamples"
+    }
+  },
+  "manuscript_figures": [
+    "fig1_growth_and_fold_change.png",
+    "fig2_spatial_agents.png",
+    "fig3_fraction_and_doubling.png",
+    "fig4_replicate_distributions.png",
+    "fig5_diversity_and_counts.png",
+    "fig6_oxygen_over_time.png",
+    "fig7_spatial_oxygen.png",
+    "fig8_density_kde.png"
+  ]
+}

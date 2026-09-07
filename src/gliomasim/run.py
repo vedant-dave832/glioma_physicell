@@ -149,9 +149,23 @@ def run_all(
     physicell_root: Path,
     force: bool = False,
     on_progress=None,
+    max_seconds: float | None = None,
 ) -> list[dict]:
+    """Execute the planned runs, resuming and skipping completed ones.
+
+    ``max_seconds`` is a wall-clock budget. It is checked BETWEEN runs, never
+    during one, so a chunk always stops on a whole completed run rather than
+    leaving a half-written output directory that would be discarded and redone.
+    This is what makes a long replicate set safe to work through in slices.
+    """
     results = []
+    started = time.time()
     for i, spec in enumerate(specs, 1):
+        if max_seconds is not None and time.time() - started >= max_seconds:
+            results.append({"status": "budget_reached", "remaining": len(specs) - i + 1})
+            if on_progress:
+                on_progress(i, len(specs), spec, results[-1])
+            break
         if not force and is_complete(spec, model):
             results.append({"arm": spec.arm, "seed": spec.seed, "status": "skipped"})
             if on_progress:

@@ -43,11 +43,15 @@ substrate:
   dirichlet:  {value: 38,       units: mmHg,           field: "microenvironment_setup/variable[oxygen]/Dirichlet_boundary_condition", meaning: "fixed oxygen at all domain boundaries", provenance: default, source: physicell_default}
   uptake:     {value: 10,       units: "1/min",        field: "cell_definition/phenotype/secretion/substrate[oxygen]/uptake_rate", meaning: "per-cell oxygen uptake", provenance: default, source: physicell_default}
   note: >-
-    With these settings oxygen stays near-saturating over the simulated
-    densities. That is a modelling choice, and it means oxygen is NOT a limiting
-    resource and cannot mediate competition. Reviewer major issue #5. The
-    analysis reports the minimum oxygen actually reached so this can be stated
-    as an observation rather than an assumption.
+    Do NOT assert that oxygen stays non-limiting. Measured across the 60-run
+    main set, the minimum oxygen reached was 10.8 mmHg — below PhysiCell's
+    default hypoxic threshold of 15 mmHg, though still above the 5 mmHg necrosis
+    threshold. So the denser co-culture arms do enter mild hypoxia by the end of
+    the run, and oxygen is a weak shared resource rather than an inert
+    background. Reviewer major issue #5. The analysis reports the minimum oxygen
+    actually reached in every run so this stays an observation, not an
+    assumption; state the measured value in the manuscript rather than claiming
+    saturation.
 
 # ------------------------------------------------------------------------------
 # Genotypes. All carry IDH1 R132H.

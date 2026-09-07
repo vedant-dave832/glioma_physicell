@@ -177,7 +177,7 @@ def effect_sizes(contrasts: pd.DataFrame, out_dir: Path, floor: dict | None = No
     d = contrasts.dropna(subset=["mean_difference"]).copy()
     d["y"] = np.arange(len(d))[::-1]
 
-    fig, ax = plt.subplots(figsize=(6.0, 0.5 * max(len(d), 3) + 1.6))
+    fig, ax = plt.subplots(figsize=(6.4, 0.62 * max(len(d), 3) + 1.5))
 
     if floor and np.isfinite(floor.get("ci_low", np.nan)):
         ax.axvspan(
@@ -211,7 +211,10 @@ def effect_sizes(contrasts: pd.DataFrame, out_dir: Path, floor: dict | None = No
     _finish(ax, "Difference in log growth rate (1/min)", "", "Paired effect sizes by arm")
     ax.grid(True, axis="x")
     ax.grid(False, axis="y")
-    ax.legend(loc="lower right", fontsize=8)
+    ax.margins(y=0.22)
+    # Legend below the axis: inside the plot it lands on top of the noise-floor
+    # band, which is the one thing the reader needs to see unobstructed.
+    ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.22), fontsize=8, ncol=2)
     return _save(fig, out_dir, "fig_effect_sizes", d)
 
 
