@@ -298,7 +298,7 @@ def cmd_analyze(args) -> None:
     if sweep_rows:
         sweep = pd.DataFrame(sweep_rows)
         sweep.to_csv(out / "sensitivity_sweep.csv", index=False)
-        plots.sensitivity(sweep, fig_dir)
+        plots.sensitivity(sweep, fig_dir, model)
 
     # --- manuscript artefacts --------------------------------------------
     prov = (runner.physicell_provenance(_physicell_root(args))

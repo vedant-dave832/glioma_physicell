@@ -218,32 +218,54 @@ def effect_sizes(contrasts: pd.DataFrame, out_dir: Path, floor: dict | None = No
     return _save(fig, out_dir, "fig_effect_sizes", d)
 
 
-def sensitivity(sweep: pd.DataFrame, out_dir: Path) -> Path:
+def sensitivity(
+    sweep: pd.DataFrame, out_dir: Path, model: Model | None = None
+) -> Path:
     """Outcome as a function of the assumed apoptosis suppression factor.
 
     Reviewer recommended issue #2. The x-axis is the assumption; the point of the
     figure is that the headline result is a function of it, not a finding.
+
+    Series colours come from the model so a population keeps the same colour it
+    has in every other figure. Colour follows the entity, never the plotting
+    order -- a reader who learned "TP53-mutant is orange" must not meet a blue
+    one here.
     """
-    fig, ax = plt.subplots(figsize=(5.2, 3.6))
+    fig, ax = plt.subplots(figsize=(5.8, 3.9))
     pops = sorted(sweep["population"].unique())
-    for i, pop in enumerate(pops):
+    colours = _colours(model, pops) if model else {
+        p: FALLBACK[i % len(FALLBACK)] for i, p in enumerate(pops)
+    }
+
+    for pop in pops:
         sub = sweep[sweep.population == pop].sort_values("apoptosis_factor")
-        c = FALLBACK[i % len(FALLBACK)]
-        ax.plot(sub["apoptosis_factor"], sub["mean"], "-o", color=c, lw=2, ms=6,
-                markeredgecolor=SURFACE, markeredgewidth=2, label=pop)
-        if len(sub):
-            ax.annotate(
-                pop,
-                (sub["apoptosis_factor"].iloc[-1], sub["mean"].iloc[-1]),
-                textcoords="offset points",
-                xytext=(6, 0),
-                color=c,
-                fontsize=8,
-                va="center",
-            )
+        c = colours[pop]
+        sem = sub["sd"] / np.sqrt(sub["n_replicates"].clip(lower=1))
+        ax.errorbar(
+            sub["apoptosis_factor"], sub["mean"], yerr=1.96 * sem,
+            fmt="-o", color=c, ecolor=c, lw=2, ms=6, elinewidth=1.4, capsize=3,
+            markeredgecolor=SURFACE, markeredgewidth=2,
+            label=_label(model, pop) if model else pop,
+        )
+
+    # The ceiling: with apoptosis removed entirely, growth is capped by the cycle
+    # rate. It is what makes the curve plateau, so drawing it turns an unexplained
+    # flattening into a stated bound.
+    if model is not None:
+        g = model.genotypes.get("IDHmut_TP53mut")
+        if g is not None:
+            n0 = model.seeding["n_cells_per_population"]
+            ceiling = n0 * np.exp(g.cycle.cycle_rate_per_min * model.time["max_time"])
+            ax.axhline(ceiling, color=MUTED, lw=1.2, ls=(0, (4, 3)))
+            ax.annotate(f"ceiling with apoptosis removed entirely ({ceiling:.0f})",
+                        (sweep["apoptosis_factor"].max(), ceiling),
+                        textcoords="offset points", xytext=(0, 5), ha="right",
+                        color=MUTED, fontsize=7.5)
+
     ax.axvline(1.0, color=AXIS, lw=1)
-    ax.annotate("no effect", (1.0, ax.get_ylim()[1]), textcoords="offset points",
-                xytext=(4, -10), color=MUTED, fontsize=7.5)
+    ax.annotate("1x = no effect\n(the null)", (1.0, 0.02), xycoords=("data", "axes fraction"),
+                textcoords="offset points", xytext=(5, 0), color=MUTED, fontsize=7.5,
+                va="bottom")
     ax.set_xscale("log")
     _finish(
         ax,
@@ -252,7 +274,7 @@ def sensitivity(sweep: pd.DataFrame, out_dir: Path) -> Path:
         "Sensitivity to the unsourced assumption",
     )
     ax.legend(loc="upper left", fontsize=8)
-    ax.margins(x=0.15)
+    ax.margins(x=0.18, y=0.16)
     return _save(fig, out_dir, "fig_sensitivity", sweep)
 
 
